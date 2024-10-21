@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Lihat Semua Kasus - UTS APAP 2023</title>
+    <object th:include="fragments/fragment :: css" th:remove="tag"></object>
+    <object th:include="fragments/fragment :: js" th:remove="tag"></object>
+</head>
+<body>
+<nav th:replace="fragments/fragment :: navbar(laporan)"></nav>
+
+<div class="container">
+    <div class="alert alert-primary" role="alert" id="success-alert" style="display: none;"></div>
+    <div class="alert alert-danger" role="alert" id="error-alert" style="display: none;"></div>
+
+    <table id="table_result" class="display" style="width:100%">
+        <thead>
+        <tr>
+            <th>Issue Id</th>
+            <th>Room Number</th>
+            <th>Description</th>
+            <th>Reported On</th>
+            <th>Reported By</th>
+            <th>Status</th>
+            <th>Unresolved days</th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+
+<script src="/assets/js/jquery-3.6.1.min.js"></script>
+<script src="/assets/js/jquery.dataTables.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const table = $('#table_result').DataTable({
+            "pagingType": "full_numbers",
+            "lengthMenu": [5, 10, 25, 50],
+            "pageLength": 10,
+            "language": {
+                "search": "Filter records:"
+            }
+        });
+
+        // Fetch the data using the Fetch API
+        fetch('/api/lapor/active')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok " + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                table.clear();  // Clear any existing data
+
+                // Loop through the data and add rows
+                data.forEach(issue => {
+                    table.row.add([
+                        issue.issueId,
+                        issue.roomModel.roomNumber,
+                        issue.description,
+                        issue.reportedOn,
+                        issue.reportedBy,
+                        issue.status,
+                        issue.unresolvedDays
+                    ]).draw();
+                });
+
+                document.getElementById('success-alert').textContent = "Data loaded successfully";
+                document.getElementById('success-alert').style.display = "block";
+            })
+            .catch(error => {
+                document.getElementById('error-alert').textContent = "Failed to load data: " + error.message;
+                document.getElementById('error-alert').style.display = "block";
+            });
+    });
+</script>
+</body>
+</html>

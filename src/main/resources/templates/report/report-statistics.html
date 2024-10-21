@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Lihat Semua Kasus - UTS APAP 2023</title>
+    <object th:include="fragments/fragment :: css" th:remove="tag"></object>
+    <object th:include="fragments/fragment :: js" th:remove="tag"></object>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"
+            integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+<nav th:replace="fragments/fragment :: navbar(statistik)"></nav>
+
+<div class="container">
+
+    <h1 class="mt-4 py-4">Statistik Kasus Aktif per Fakultas</h1>
+
+    <table id="table_result" class="display" style="width:100%">
+        <thead>
+        <tr>
+            <th>Fakultas</th>
+            <th>Jumlah Kasus</th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+
+    <h2 class="mt-4 py-4">Chart</h2>
+    <div class="chart-container pb-5 mb-5" style="width:80%">
+        <canvas id="myChart"></canvas>
+    </div>
+</div>
+
+<script src="/assets/js/jquery-3.6.1.min.js"></script>
+<script src="/assets/js/jquery.dataTables.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const table = $('#table_result').DataTable({
+            "pagingType": "full_numbers",
+            "lengthMenu": [5, 10, 25, 50],
+            "pageLength": 10,
+            "language": {
+                "search": "Filter records:"
+            }
+        });
+
+        // Fetch the data using the Fetch API
+        fetch('/api/lapor/statistics')
+            .then(response => response.json())
+            .then(data => {
+                // Clear the existing table
+                table.clear();
+
+                // Data arrays for the chart
+                const fakultasLabels = [];
+                const kasusData = [];
+
+                data.forEach(item => {
+                    // Populate the DataTable
+                    table.row.add([
+                        item.fakultas,
+                        item.jumlahKasus
+                    ]).draw();
+
+                    // Populate chart data
+                    fakultasLabels.push(item.fakultas);
+                    kasusData.push(item.jumlahKasus);
+                });
+
+                // Create a bar chart using Chart.js
+                const ctx = document.getElementById('myChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: fakultasLabels,  // X-axis labels
+                        datasets: [{
+                            label: 'Jumlah Kasus',
+                            data: kasusData,       // Y-axis data
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',  // Bar color
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        responsive: true,
+                        maintainAspectRatio: true
+                    }
+                });
+            })
+            .catch(error => console.error('Error fetching statistics:', error));
+    });
+</script>
+</body>
+</html>
